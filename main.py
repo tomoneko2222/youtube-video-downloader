@@ -35,17 +35,18 @@ def download_media():
         url = input("YouTube video url: ")
         if is_valid_url(url):
             while True:
-                media_type = input("mp3/mp4: ")
+                media_type = input("mp3/mp4/wav: ")
                 if media_type.lower() == "mp3":
                     download_mp3(url)
                     break
                 elif media_type.lower() == "mp4":
                     download_mp4(url)
                     break
-                elif media_type == "":
-                    print(f"{colorama.Fore.RED}mp3 or mp4{colorama.Style.RESET_ALL}")
+                elif media_type.lower() == "wav":
+                    download_wav(url)
+                    break
                 else:
-                    print(f"{colorama.Fore.RED}mp3 or mp4{colorama.Style.RESET_ALL}")
+                    print(f"{colorama.Fore.RED}mp3, mp4, or wav{colorama.Style.RESET_ALL}")
         else:
             print("有効なYouTubeのURLを入力してください。")
 
@@ -112,7 +113,22 @@ def download_mp4(url):
         video_stream = yt.streams.filter(progressive=True).order_by('resolution').desc().first()
         video_stream.download(filename=filename)
         print(f"{yt.title} をダウンロードしました")
+# wav をダウンロードする関数
+def download_wav(url):
+    yt = YouTube(url)
+    yt.register_on_progress_callback(progress_function)
+    clean_title = clean_filename(yt.title)
+    filename = f"{clean_title}.wav"
+    counter = 1
+    while os.path.exists(filename):
+        filename = f"{clean_title} ({counter}).wav"
+        counter += 1
+    print(f"\nダウンロード中: {yt.title}")
+    audio = yt.streams.filter(only_audio=True).first()
+    audio.download(filename=filename)
+    # ffmpegを使用してmp4からwavに変換
+    os.system(f"ffmpeg -i {filename.replace('.wav', '.mp4')} {filename}")
+    print(f"{yt.title} をダウンロードしました")
 
 if __name__ == "__main__":
-    while True:
-        download_media()
+    download_media()
